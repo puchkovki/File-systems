@@ -1,94 +1,63 @@
 // Copyright [2020] <Puchkov Kyryll>
-#include <experimental/filesystem>
-#include <fstream>
-#include <iostream>
-#include <string>
+#include "ps.hpp"
 
 namespace fs = std::experimental::filesystem;
 
-// Counts the real tty
-void CountRealTty(std::string* strTty);
+Processes::Processes(std::string process_id, std::string process_cmd,
+char process_state, std::string process_tty)
+    : pid(process_id),
+    cmd(process_cmd),
+    tty(process_tty),
+    state(process_state) {}
 
-// Return true in case the string is a number
-bool isDigit(const std::string& s);
+Processes::Processes()
+    : pid(0), cmd("process's_cmd"), tty("0"), state('X') {}
 
-// Takes the [PID]/stat file apart
-std::vector<std::string> ReadStat(std::string path);
+Processes::~Processes() {}
 
-// Prints the indent to make a better appearance
-void PrintIndent(size_t size);
+void Processes::setPid(std::string process_id) {
+    pid = process_id;
+}
 
-// Prints columns' titles
-void PrintIntro();
+void Processes::getPid(void) {
+    std::cout << pid;
+    PrintIndent(pid.size());
+}
 
-// ps-analog
-int ps(void);
+void Processes::setCmd(std::string process_cmd) {
+    cmd = process_cmd;
+}
 
-class Processes {
- public:
-    std::string pid;
-    std::string cmd;
-    std::string tty;
-    char state;
+void Processes::getCmd(void) {
+    std::cout << cmd;
+    PrintIndent(cmd.size());
+}
 
-    Processes(std::string process_id, std::string process_cmd,
-    char process_state, std::string process_tty)
-        : pid(process_id),
-        cmd(process_cmd),
-        tty(process_tty),
-        state(process_state) {}
+void Processes::setTty(std::string process_tty) {
+    tty = process_tty;
+}
 
-    Processes()
-        : pid(0), cmd("process's_cmd"), tty("0"), state('X') {}
+void Processes::getTty(void) {
+    std::cout << tty;
+    PrintIndent(tty.size());
+}
 
-    ~Processes() {}
+void Processes::setState(char process_state) {
+    state = process_state;
+}
 
-    //////////////////////////////////////////////
+void Processes::getState(void) {
+    std::cout << state;
+    PrintIndent(1);
+}
 
-    void setPid(std::string process_id) {
-        pid = process_id;
-    }
-
-    void getPid(void) {
-        std::cout << pid;
-        PrintIndent(pid.size());
-    }
-
-    void setCmd(std::string process_cmd) {
-        cmd = process_cmd;
-    }
-
-    void getCmd(void) {
-        std::cout << cmd;
-        PrintIndent(cmd.size());
-    }
-
-    void setTty(std::string process_tty) {
-        tty = process_tty;
-    }
-
-    void getTty(void) {
-        std::cout << tty;
-        PrintIndent(tty.size());
-    }
-
-    void setState(char process_state) {
-        state = process_state;
-    }
-
-    void getState(void) {
-        std::cout << state;
-        PrintIndent(1);
-    }
-
-    void Print(void) {
-        getPid();
-        getState();
-        getTty();
-        getCmd();
-        std::cout << std::endl;
-    }
-};
+void Processes::Print(void) {
+    getPid();
+    getState();
+    getTty();
+    getCmd();
+    std::cout << std::endl;
+}
 
 
 int main(void) {
