@@ -7,7 +7,7 @@
 namespace fs = std::experimental::filesystem;
 
 // Counts the real tty
-void MakeRealTty(std::string* strTty);
+void CountRealTty(std::string* strTty);
 
 // Return true in case the string is a number
 bool isDigit(const std::string& s);
@@ -23,8 +23,6 @@ void PrintIntro();
 
 // ps-analog
 int ps(void);
-
-//////////////////////////////////////////////////////////////////////////
 
 class Processes {
  public:
@@ -106,7 +104,7 @@ int ps(void) {
     for (auto& p : fs::directory_iterator(proc)) {
         if (isDigit(p.path())) {
             args = ReadStat(p.path().string() + "/stat");
-            MakeRealTty(&args[6]);
+            CountRealTty(&args[6]);
             Processes proccess(args[0], args[1], args[2][0], args[6]);
             proccess.Print();
         }
@@ -168,59 +166,59 @@ std::vector<std::string> ReadStat(std::string path) {
 
 
 // Counts the real tty
-void MakeRealTty(std::string* strTty) {
-    /* Есть такие префиксы:
+void CountRealTty(std::string* strTty) {
+    /* Есть префиксы:
      * tty, pts/, ttyUSB, ttyACM, pts/ptmx
      * Им соответствуют major 4, 136, 188, 166, 5
      * В последнем случае минор не важен 
      * В остальных для получения реального tty требуется
      * сложить minor и major*/
 
-    uint32_t tty;
+    uint32_t tty = EXIT_FAILURE;
     try {
         tty = stoll(*strTty);
     }
     catch (std::invalid_argument) {
-         std::cerr << "No conversion could be performed!" << std::endl;
+        std::cerr << "No conversion could be performed!" << std::endl;
     }
     catch (std::out_of_range) {
         std::cerr << "The converted value would fall out of the"
             << " range of the result type!" << std::endl;
     }
 
-    int major = 0;
-    int minor = 0;
-    int bit = 0;
-    for (int i = 0; i < 32; ++i) {
-        if ((i < 8) || (i > 15)) {
-            // i-ый бит minor
-            bit = (tty >> i) & 1;
-
-            minor | bit;
-            minor << 1;
-        } else {
-            // i-ый бит major
-            bit = (tty >> i) & 1;
-
-            major | bit;
-            major << 1;
-        }
-    }
+    int32_t major = (tty & (255 << 8)) >> 8;
+    int32_t minor = (tty & 255) + ((tty & (65535 << 16)) >> 8);
 
     std::string result;
-    switch (major) {
-        case '5':
-            result = "pts/ptmx";
-        case '4':
-            result = "tty/" + std::to_string(minor);
-        case '136':
-            result = "pts/" + std::to_string(minor);
-        case '188':
-            result = "ttyUSB/" + std::to_string(minor);
-        case '166':
-            result = "ttyACM/" + std::to_string(minor);
-        default:
-            result = std::to_string(minor);
+    if (tty == EXIT_FAILURE) {
+        result = "?";
+    } else {
+        switch (major) {
+            case 4:
+                result = "tty" + std::to_string(minor);
+                break;
+            case 5:
+                result = "pts/ptmx";
+                break;
+            case 136:
+                result = "pts/" + std::to_string(minor);
+                break;
+            case 166:
+                result = "ttyACM" + std::to_string(minor);
+                break;
+            case 188:
+                result = "ttyUSB" + std::to_string(minor);
+                break;
+            case 247:
+                result = "ttyHSL0";
+                break;
+            case 248:
+                result = "ttyHSL0";
+                break;
+            default:
+                result = "?";
+                break;
+        }
     }
 
     *strTty = result;
