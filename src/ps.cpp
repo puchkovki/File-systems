@@ -52,10 +52,10 @@ void Processes::getState(void) {
 }
 
 void Processes::Print(void) {
-    getPid();
-    getState();
-    getTty();
-    getCmd();
+    Processes::getPid();
+    Processes::getState();
+    Processes::getTty();
+    Processes::getCmd();
     std::cout << std::endl;
 }
 

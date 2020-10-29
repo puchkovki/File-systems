@@ -7,7 +7,7 @@ all: build build/main.o res test
 	./build/test > res/$(ARGS).txt
 
 build:
-	mkdir build || echo "build: done"
+	mkdir -p build
 
 build/main.o: build
 	g++ $(FLAGS) -c -o build/main.o src/$(ARGS) -lstdc++fs
@@ -16,5 +16,5 @@ test: build build/main.o
 	g++ $(FLAGS) -o build/test build/main.o -lstdc++fs
 
 res:
-	rm -rf res || echo "rm -rf test: done"
+	rm res/$(ARGS).txt || echo "rm previous res file: done"
 	mkdir -p res
