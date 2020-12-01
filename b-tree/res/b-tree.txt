@@ -1,0 +1,7 @@
+B-tree with parameter 3 and first key 10 succesfully made.
+Searching for the key: 10 in the B-tree
+Found at level 0 by index 0
+Searching for the key: 1 in the B-tree
+Couldn't find key 1
+10 
+10 3 
