@@ -1,7 +1,21 @@
 B-tree with parameter 3 and first key 10 succesfully made.
 Searching for the key: 10 in the B-tree
-Found at level 0 by index 0
-Searching for the key: 1 in the B-tree
-Couldn't find key 1
-10 
-10 3 
+Found at level 0 by index 1
+Searching for the key: 11 in the B-tree
+Couldn't find key 11
+Current tree structure is:
+-1 10 
+
+Adding 11
+Adding 5
+Searching for the key: 11 in the B-tree
+Found at level 2 by index 1
+Current tree structure is:
+-1 10 
+  |			 \
+-1 5 	 | 	-1 11 
+Deleting element 11
+Current tree structure is:
+-1 10 
+  |			 \
+-1 5 	 | 	-1 
