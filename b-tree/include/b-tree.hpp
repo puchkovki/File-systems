@@ -2,6 +2,7 @@
 #ifndef  B_TREE_INCLUDE_B_TREE_HPP_
 #define  B_TREE_INCLUDE_B_TREE_HPP_
 
+#include <unistd.h>
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -19,7 +20,7 @@ struct Unit {
     bool deleted;
 
     // Явный конструктор
-    explicit Unit(int64_t _value, Node* _child, bool _deleted);
+    explicit Unit(int64_t, Node*, bool);
     // Деструктор
     ~Unit();
 };
@@ -42,25 +43,23 @@ struct Node {
     Node* parent;
 
     // Конструктор по значению ключа
-    explicit Node(size_t parameter, int64_t key, bool _root,
-        bool _leaf, Node* _parent);
+    explicit Node(size_t, int64_t, bool, Node*);
     // Конструктор по значению "ячейки"
-    Node(size_t parameter, Unit Key, bool _root,
-        bool _leaf, Node* _parent);
+    Node(size_t, Unit, bool, Node*);
     // Деструктор
     ~Node();
 
     // Добавление в ключа в узел
-    Node* add(const Unit&);
-    // Компаратор для сортировки вектора
-    static bool cmp(const Unit& a, const Unit& b);
-
-    int search(const int64_t& key, uint16_t* level);
-    std::pair<uint16_t, Node*> search(const int64_t& key);
+    Node* add_up(const Unit&);
+    Node* add_down(const Unit&);
+    int32_t find_index(int64_t);
+    void insert(const Unit&);
+    int search(const int64_t&, uint16_t*);
+    std::pair<uint16_t, Node*> search(const int64_t&);
     // Печать узла
     void print();
     // Поиск узла и вставка маркера удаление
-    void delete_key(const int64_t& key);
+    void delete_key(const int64_t&);
     // Рекурсивно двигаясь по узлам освобождаем динамическую память
     void destroy();
 };
@@ -72,7 +71,7 @@ struct Btree {
     Node* root;
 
     // Явный конструктор по параметру дерева и первому значения ключа
-    explicit Btree(size_t parameter, int64_t key);
+    explicit Btree(size_t, int64_t);
     // Деструктор
     ~Btree();
 
@@ -80,13 +79,13 @@ struct Btree {
      * подходящего места
      * В случае появления нового корня производит замену
      */
-    void add(int64_t key);
+    void add(int64_t);
     // Ищет уровень, на котором расположен ключ и его индекс в узле
-    void find(const int64_t& key);
+    void find(const int64_t&);
     // Печатает дерево путем рекурсивного спуска
     void print();
     // Удаляет ключ путем рекурсивного спуска и поиска
-    void delete_key(const int64_t& key);
+    void delete_key(const int64_t&);
 };
 
 #endif  // B_TREE_INCLUDE_B_TREE_HPP_

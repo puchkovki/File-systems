@@ -3,7 +3,8 @@ FLAGS = -I include -Wall -Wextra -pedantic -O3 -Wshadow -Wformat=2 \
 -D_GLIBCXX_DEBUG_PEDANTIC -fsanitize=address,undefined \
 -fno-sanitize-recover=all -fstack-protector
 
-all: build build/main.o res test 
+all: build build/main.o res
+	g++ $(FLAGS) -o build/test build/main.o 
 	./build/test > res/b-tree.txt
 
 build:
@@ -11,9 +12,6 @@ build:
 
 build/main.o: build
 	g++ $(FLAGS) -c -o build/main.o src/main.cpp
-
-test: build build/main.o
-	g++ $(FLAGS) -o build/test build/main.o
 
 res:
 	rm res/b-tree.txt || echo "rm previous res file: done"
