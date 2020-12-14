@@ -10,125 +10,152 @@
 
 struct Node;
 
-struct Unit {
-    // Пара — ключ, указатель на ребенка,
-    // в котором будут храниться значения больше данного
-    // TODO(puchkovki): заменить вектор пар на две простые переменные
+// Ключ — элемент узла
+struct Key {
+    // Значение ключа
     int64_t value;
+    // Указатель на ребенка с большими либо равными элементами
     Node* child;
     // Маркер удаления
     bool deleted;
 
     // Явный конструктор
-    explicit Unit(int64_t, Node*, bool);
+    explicit Key(int64_t, Node*, bool);
     // Деструктор
-    ~Unit();
+    ~Key();
 };
 
 
-// Явный конструктор
-Unit::Unit(int64_t _value = -1, Node* _child = nullptr, bool _deleted = false)
+// Конструктор ключа по значению
+Key::Key(int64_t _value = -1, Node* _child = nullptr, bool _deleted = false)
     : value(_value), child(_child), deleted(_deleted) {}
 
-Unit::~Unit() {}
+// Деструктор ключа
+Key::~Key() {}
 
 //--------------------------------------
 
+// Узел B-дерева
 struct Node {
     // Параметр дерева
     size_t t;
-    // Пары <ключ, указатель на ребенка "побольше"> в узле
-    /* < -1, child_1> | <value_1, child_2> | ... | <value_n, child_{n+1}>
-    *               Структура узла:
-    *   -1 | value_1  |  ...  |  value_n
-    *       /       \           /       \
-    *   child_1  child_2...child_{n}  child_{n+1}
-    */
-    std::vector<Unit> keys;
+    /* Вектор ключей
+     * < -1, child_1> | <value_1, child_2> | ... | <value_n, child_{n+1}>
+     *               Структура дерева:
+     *   -1 | value_1 |  ...  |  value_n
+     *       /       \           /       \
+     *   child_1  child_2...child_{n}  child_{n+1}
+     *                   ...
+     */
+    std::vector<Key> keys;
+    // Максимальное количество ключей в узле
     size_t max_keys;
-    size_t min_keys;
+    // Указатель на родительский узел
     Node* parent;
 
-    // Конструктор по значению ключа
+    // Явный конструктор по значению ключа
     explicit Node(size_t, int64_t, Node*);
-    // Конструктор по значению "ячейки"
-    Node(size_t, Unit, Node*);
+    // Конструктор по объекту Ключ
+    Node(size_t, Key, Node*);
     // Деструктор
     ~Node();
 
-    // Добавление в ключа в узел
-    Node* add_up(const Unit&);
-    Node* add_down(const Unit&);
+    /* Рекурсивное добавление ключа в узел с балансировкой и "подъемом" наверх
+     * Возвращаемое значение: указатель на новый корень, если он поменялся
+     */
+    Node* add_up(const Key&);
+    /* Рекурсивное добавление ключа к листу
+     * Возвращаемое значение: указатель на новый корень, если он поменялся
+     */
+    Node* add_down(const Key&);
+    // Поиск индекса последнего меньшего ключа методом двоичного поиска
     int32_t find_index(int64_t);
-    void insert(const Unit&);
+    // Вставка ключа в узел по индексу
+    void insert(const Key&);
+    /* Поиск ключа по значению
+     * Возвращает пару из индекса и указателя на узел:
+     * в данном узле по индексу расположен искомый ключ
+     */
     std::pair<int16_t, Node*> search(const int64_t&);
     // Печать узла
     void print();
-    // Поиск узла и вставка маркера удаление
+    // Вставка маркера удаление
     void delete_key(const int64_t&);
-    // Рекурсивно двигаясь по узлам освобождаем динамическую память
+    // Освобождение динамической памяти в узле и его потомках
     void destroy();
+    // Печать узла для отрисовки с помощью graphviz
     void print_gv();
 };
 
-// Конструктор узла
-Node::Node(size_t parameter, int64_t key = -1, Node* _parent = nullptr):
+// Конструктор узла по значению ключа
+Node::Node(size_t parameter, int64_t value = -1, Node* _parent = nullptr):
         t(parameter), parent(_parent) {
-    // Изначально добавляем фиктивный ключ
-    Unit auxiliary_key;
+    // Создание и добавление "нулевого" фиктивного ключа
+    Key auxiliary_key;
     this->keys.push_back(auxiliary_key);
 
-    // Добавляем первый "реальный" ключ
-    if (key != -1) {
-        Unit Key(key);
-        keys.push_back(Key);
+    // Добавление первого "реального" ключа в случае необходимости
+    if (value != -1) {
+        Key unit(value);
+        keys.push_back(unit);
     }
 
+    /* В классической реализации в случае, если
+     * данный узел не корень, max_keys = 2*t - 1
+     */
     max_keys = t - 1;
-    min_keys = 1;
 }
 
-Node::Node(size_t parameter, Unit Key, Node* _parent): t(parameter),
+// Конструктор узла по ключу
+Node::Node(size_t parameter, Key unit, Node* _parent): t(parameter),
         parent(_parent) {
-    // Изначально добавляем фиктивный ключ
-    Unit auxiliary_key;
+    // Создание и добавление "нулевого" фиктивного ключа
+    Key auxiliary_key;
     this->keys.push_back(auxiliary_key);
 
-    // Теперь добавляем первый "реальный" ключ
-    keys.push_back(Key);
+    // Добавление первого "реального" ключа
+    keys.push_back(unit);
 
+
+    /* В классической реализации в случае, если
+     * данный узел не корень, max_keys = 2*t - 1
+     */
     max_keys = t - 1;
-    min_keys = 1;
 }
 
+// Деструктор узла
 Node::~Node() {}
 
-Node* Node::add_down(const Unit& Key) {
+/* Рекурсивное добавление ключа к листу
+ * Возвращаемое значение: указатель на новый корень, если он поменялся
+ */
+Node* Node::add_down(const Key& unit) {
+    // Спускаемся до уровня листов
     if (this->keys[0].child != nullptr) {
-        // Ищем последний элемент меньший поданного
-        int32_t index = this->find_index(Key.value);
-        // Спускаемся в его дочерний узел
+        // Находим индекс последнего меньшего ключа
+        int32_t index = this->find_index(unit.value);
+        // Спускаемся в дочерний узел
         if ((uint)index < (this->keys.size() - 1)) {
-            return this->keys[index].child->add_down(Key);
+            return this->keys[index].child->add_down(unit);
         } else {
-            return this->keys[this->keys.size() - 1].child->add_down(Key);
+            return this->keys[this->keys.size() - 1].child->add_down(unit);
         }
     } else {
-        return this->add_up(Key);
+        // Рекурсивное добавление ключа в узел с балансировкой
+        return this->add_up(unit);
     }
 }
 
-// Поиск индекса последнего элемента меньшего переданного
-int32_t Node::find_index(int64_t key) {
+// Поиск индекса последнего меньшего ключа методом двоичного поиска
+int32_t Node::find_index(int64_t value) {
     // Дихотомия (двоичный поиск) по узлу
     int32_t middle = -1;
     int32_t left = 0, right = (int32_t)this->keys.size() - 1;
-    // std::cout << "left: " << left << " right: " << right << std::endl;
+
     while (left <= right) {
         middle = (left + right) / 2;
-        // std::cout << "middle: " << middle << std::endl;
-        if (key <= this->keys[middle].value) {
-            if (key > this->keys[middle - 1].value) {
+        if (value <= this->keys[middle].value) {
+            if (value > this->keys[middle - 1].value) {
                 // Возвращаем индекс меньшего элемента
                 return --middle;
             } else {
@@ -139,8 +166,8 @@ int32_t Node::find_index(int64_t key) {
         }
     }
 
-    /* Не вышли из функции лишь в случае,
-     * - когда наш элемент больше всех
+    /* Не вышли из функции лишь в случае:
+     * - когда наш элемент больше всех,
      * тогда middle = this->keys.size() - 1
      * - когда наш элемент меньше всех,
      * но такое невозможно, т.к. нулевой элемент
@@ -150,30 +177,39 @@ int32_t Node::find_index(int64_t key) {
     return middle;
 }
 
-Node* Node::add_up(const Unit& Key) {
+/* Рекурсивное добавление ключа в узел с балансировкой и "подъемом" наверх
+ * Возвращаемое значение: указатель на новый корень, если он поменялся
+ */
+Node* Node::add_up(const Key& unit) {
     // Изначально добавляем элемент
-    this->insert(Key);
+    this->insert(unit);
     if (this->keys.size() - 1 <= this->max_keys) {
         // Не произошло переполнения
         return nullptr;
     } else {
         // Индекс, по которому делим узел
         size_t div_index = this->keys.size() / 2;
-        if (Key.value >= this->keys[div_index + 1].value) {
-            // Добавляемый член пойдет налево
+        if (unit.value >= this->keys[div_index + 1].value) {
+            // Добавляемый член пойдет направо
             if ((div_index < 2)) {
+                // В левом узле не останется элементов
                 ++div_index;
             }
-        } else if (Key.value < this->keys[div_index - 1].value) {
+        } else if (unit.value < this->keys[div_index - 1].value) {
+            // Добавляемый член пойдет налево
             if (this->keys.size() - div_index - 1 < 1) {
+                // В правом узле не останется элементов
                 --div_index;
             }
         }
-        // Элемент, который поднимем наверх
-        Unit up = this->keys[div_index];
+        // Элемент, который добавляем к родительскому узле
+        Key up = this->keys[div_index];
 
         // Новый узел с фиктивной вершиной вначале
         Node* new_node = new Node(this->t);
+        /* Фиктивная вершина указывает на дочерний узел поднятого ключа,
+         * т.к. элемент после опорного больше их всех
+         */
         new_node->keys[0].child = up.child;
         // Добавляем элементы в новый узел
         for (size_t i = div_index + 1; i < keys.size(); ++i) {
@@ -182,9 +218,10 @@ Node* Node::add_up(const Unit& Key) {
         // Удаляем элементы из узла
         this->keys.erase(this->keys.begin() + div_index, this->keys.end());
         /* Узел `up` ссылается на новый узел с ключами
-        * больше либо равными keys[div_index]
+        * больше либо равными `up.value`
         */
         up.child = new_node;
+        // Обновляем предков дочерних узлов
         if (new_node->keys[0].child != nullptr) {
             for (auto i : new_node->keys) {
                 i.child->parent = new_node;
@@ -199,27 +236,23 @@ Node* Node::add_up(const Unit& Key) {
             return new_root;
         } else {
             new_node->parent = this->parent;
-            /*std::cout << "Recursivly adding to the parent: ";
-            for (const auto& i : this->parent->keys) {
-                std::cout << i.value << " ";
-            }
-            std::cout << std::endl;*/
             return this->parent->add_up(up);
         }
     }
 }
 
-void Node::insert(const Unit& Key) {
-    int32_t index = this->find_index(Key.value);
+// Вставка ключа в узел по индексу
+void Node::insert(const Key& unit) {
+    int32_t index = this->find_index(unit.value);
     if ((uint)index < (this->keys.size() - 1)) {
         // Вставляем перед большим элементом либо в конец
-        this->keys.emplace(this->keys.begin() + index + 1, Key);
+        this->keys.emplace(this->keys.begin() + index + 1, unit);
     } else {
-        this->keys.push_back(Key);
+        this->keys.push_back(unit);
     }
 }
 
-// Рекурсивное удаление узла
+// Освобождение динамической памяти в узле и его потомках
 void Node::destroy() {
     for (auto i : this->keys) {
         if (i.child != nullptr) {
@@ -229,45 +262,51 @@ void Node::destroy() {
     }
 }
 
-// Поиск узла и вставка маркера удаление
-void Node::delete_key(const int64_t& key) {
-    std::pair<uint16_t, Node*> found = this->search(key);
+// Вставка маркера удаление
+void Node::delete_key(const int64_t& value) {
+    std::pair<uint16_t, Node*> found = this->search(value);
     if (found.second != nullptr) {
         found.second->keys[found.first].deleted = true;
     } else {
-        std::cout << "Couldn't delete key " << key
+        std::cout << "Couldn't delete value " << value
             << " because it's missing in the B-tree" << std::endl;
     }
 }
 
-std::pair<int16_t, Node*> Node::search(const int64_t& key) {
+/* Поиск ключа по значению
+ * Возвращает пару из индекса и указателя на узел:
+ * в данном узле по индексу расположен искомый ключ
+ */
+std::pair<int16_t, Node*> Node::search(const int64_t& value) {
     for (const auto& i : this->keys) {
-        // Индекс элемента
-        // По этому индексу в дочернем векторе ищем элемент
+        // Индекс текущего элемента вектора
         uint16_t index = (uint16_t) (&i - &(*std::begin(this->keys)));
 
         int64_t _value = i.value;
         bool is_leaf = this->keys[0].child == nullptr ? true : false;
 
-        if (_value == key) {
-            // Передаем индекс ключа в узле и указатель на узел
+        if (_value == value) {
+            // Нашли совпадение -> передаем индекс и указатель на узел
             return std::make_pair(index, this);
         } else if (is_leaf == false) {
             // Спускаемся на уровень ниже
-            if (key < _value) {
-                return this->keys[index - 1].child->search(key);
+            if (value < _value) {
+                // Спускаемся в дочерний узел меньшего эл-та
+                return this->keys[index - 1].child->search(value);
             } else {
-                // if (key > value)
+                // if (value > _value)
+                // Продолжаем поиски большего эл-та
                 if (index == keys.size() - 1) {
-                    return this->keys[index].child->search(key);
+                    // Эл-т больше всех —> спускаемся в дочерний узел последнего
+                    return this->keys[index].child->search(value);
                 }
             }
         } else if (is_leaf == true) {
-            // Спустились в самый низ дерева
-            if (key < _value) {
+            // Спустились на уровень листов
+            if (value < _value) {
                 // Не нашли нужного элемента в листе
                 return std::make_pair(-1, nullptr);
-            } else if (key > _value) {
+            } else if (value > _value) {
                 // Искомый элемент больше всех в данном листе
                 if (index == keys.size() - 1) {
                     return std::make_pair(-1, nullptr);
@@ -306,7 +345,7 @@ void Node::print() {
     }
 }
 
-// Печать узла
+// Печать узла для отрисовки с помощью graphviz
 void Node::print_gv() {
     std::cout << "\"" << this << "\" [label = \"";
     for (const auto& i : this->keys) {
@@ -341,59 +380,62 @@ struct Btree {
     // Корневой узел дерева
     Node* root;
 
-    // Явный конструктор по параметру дерева и первому значения ключа
+    // Явный конструктор по параметру дерева и первому значению ключа
     explicit Btree(size_t, int64_t);
     // Деструктор
     ~Btree();
 
-    /* Добавляет элемент от корня, рукурсивно спускаясь нижу в поисках
-     * подходящего места
-     * В случае появления нового корня производит замену
+    /* Добавление элемента к корню, рекурсивно спускаясь в лист
+     * В случае появления нового корня производится замена корня
      */
     void add(int64_t);
-    // Ищет уровень, на котором расположен ключ и его индекс в узле
+    // Поиск и печать узла, в котором расположен ключ и его индекса
     void find(const int64_t&);
-    // Печатает дерево путем рекурсивного спуска
+    // Рекурсивная печать дерева, начиная с корня
     void print();
+    // Рекурсивная печать дерева для отрисовки с помощью graphviz
     void print_gv();
-    // Удаляет ключ путем рекурсивного спуска и поиска
+    // Удаление ключа путем рекурсивного спуска
     void delete_key(const int64_t&);
+    // Определение оператора указателя
     Btree* operator*();
 };
 
-// Конструктор
-Btree::Btree(size_t parameter, int64_t key) {
+// Конструктор дерева по параметру дерева и первому значению ключа
+Btree::Btree(size_t parameter, int64_t value) {
     // Дерево создается с первого ключа
-    root = new Node(parameter, key, nullptr);
+    root = new Node(parameter, value, nullptr);
 }
 
-// Деструктор
+// Деструктор дерева
 Btree::~Btree() {
+    // Рекурсивное удаление узлов, начиная с корня
     root->destroy();
     delete(root);
 }
 
+// Определение оператора указателя
 Btree* Btree::operator*() {
     return this;
 }
 
-/* Добавляет элемент от корня, рукурсивно спускаясь нижу в поисках
- * подходящего места
- * В случае появления нового корня производит замену
+/* Добавление элемента к корню, рекурсивно спускаясь в лист
+ * В случае появления нового корня производится замена корня
  */
-void Btree::add(int64_t key) {
-    Unit Key(key);
-    Node* new_root = root->add_down(Key);
+void Btree::add(int64_t value) {
+    Key unit(value);
+    Node* new_root = root->add_down(unit);
     if (new_root != nullptr) {
+        // Появился новый корень
         this->root = new_root;
     }
 }
 
-// Ищет уровень, на котором расположен ключ и его индекс в узле
-void Btree::find(const int64_t& key) {
-    std::pair<int16_t, Node*> found = root->search(key);
+// Поиск и печать узла, в котором расположен ключ и его индекса
+void Btree::find(const int64_t& value) {
+    std::pair<int16_t, Node*> found = root->search(value);
     if (found.first == -1) {
-        std::cout << "Couldn't find key " << key << std::endl;
+        std::cout << "Couldn't find value " << value << std::endl;
     } else {
         std::cout << "Found in the node:";
         for (auto i : found.second->keys) {
@@ -403,18 +445,19 @@ void Btree::find(const int64_t& key) {
     }
 }
 
-// Удаляет ключ путем рекурсивного спуска и поиска
-void Btree::delete_key(const int64_t& key) {
-    root->delete_key(key);
+// Удаление ключа путем рекурсивного спуска
+void Btree::delete_key(const int64_t& value) {
+    root->delete_key(value);
 }
 
-// Печатает дерево путем рекурсивного спуска
+// Рекурсивная печать дерева, начиная с корня
 void Btree::print() {
     std::cout << "Current tree structure is:" << std::endl;
     root->print();
     std::cout <<std::endl;
 }
 
+// Рекурсивная печать дерева для отрисовки с помощью graphviz
 void Btree::print_gv() {
     std::cout << "digraph Tree {" << std::endl;
     root->print_gv();
