@@ -1,6 +1,6 @@
 // Copyright [2020] <Puchkov Kyryll>
-#ifndef LSOF_HPP_
-#define LSOF_HPP_
+#ifndef LSOF_INCLUDE_LSOF_HPP_
+#define LSOF_INCLUDE_LSOF_HPP_
 
 #include <unistd.h>
 #include <experimental/filesystem>
@@ -52,4 +52,4 @@ class Processes {
     void Print(void);
 };
 
-#endif  // LSOF_HPP_
+#endif  // LSOF_INCLUDE_LSOF_HPP_

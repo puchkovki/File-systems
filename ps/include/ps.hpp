@@ -1,6 +1,6 @@
 // Copyright [2020] <Puchkov Kyryll>
-#ifndef PS_HPP_
-#define PS_HPP_
+#ifndef  PS_INCLUDE_PS_HPP_
+#define  PS_INCLUDE_PS_HPP_
 
 #include <experimental/filesystem>
 #include <fstream>
@@ -57,4 +57,4 @@ class Processes {
     void Print(void);
 };
 
-#endif  // PS_HPP_
+#endif  // PS_INCLUDE_PS_HPP_
