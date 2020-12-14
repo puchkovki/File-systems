@@ -10,7 +10,7 @@ build:
 
 build/main.o: build
 	g++ $(FLAGS) -c -o build/main.o src/main.cpp
-	# g++ $(FLAGS) -c -o build/debug.o src/debug.cpp
+	g++ $(FLAGS) -c -o build/debug.o src/debug.cpp
 
 res:
 	rm -rf ./res/ || echo "rm previous res file: done"
@@ -19,8 +19,8 @@ res:
 execute: build/main.o res
 	g++ $(FLAGS) -o build/tree build/main.o
 	./build/tree > res/b-tree.gv
-	# g++ $(FLAGS) -o build/debug build/debug.o 
-	# ./build/debug > res/debug.txt
+	g++ $(FLAGS) -o build/debug build/debug.o 
+	./build/debug > res/test.txt
 
 print: execute
 	dot res/b-tree.gv -y -Tpng -o res/b-tree.png 
