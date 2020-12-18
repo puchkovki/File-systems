@@ -16,13 +16,26 @@ void add(const int& i, Btree* tree) {
 void search(Btree *tree, const int& key) {
     std::cout << "Searching for the key: " << key << " in the B-tree"
         << std::endl;
-    tree->find(key);
+    std::pair<int32_t, Node*> found = tree->find(key);
+    if (found.first == -1) {
+        std::cout << "Couldn't find value " << key << std::endl;
+    } else {
+        std::cout << "Found in the node:";
+        for (auto i : found.second->keys) {
+            std::cout << i.value << " ";
+        }
+        std::cout << ", by index " << found.first << std::endl;
+    }
     std::cout << std::endl;
 }
 
 void delete_key(Btree* tree, const int& key) {
     std::cout << "Deleting element " << key << std::endl;
-    tree->delete_key(key);
+    std::pair<int32_t, Node*> found = tree->delete_key(key);
+    if (found.second == nullptr) {
+        std::cout << "Couldn't delete value " << key
+            << " because it's missing in the B-tree" << std::endl;
+    }
     std::cout << std::endl;
 }
 

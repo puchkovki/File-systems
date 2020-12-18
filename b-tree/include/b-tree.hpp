@@ -7,6 +7,12 @@
 #include <iostream>
 #include <vector>
 #include <utility>
+#include <fstream>
+
+enum Color {
+    White,
+    Black
+};
 
 struct Node;
 
@@ -52,6 +58,7 @@ struct Node {
     size_t max_keys;
     // Указатель на родительский узел
     Node* parent;
+    Color color;
 
     // Явный конструктор по значению ключа
     explicit Node(size_t, int64_t, Node*);
@@ -76,15 +83,17 @@ struct Node {
      * Возвращает пару из индекса и указателя на узел:
      * в данном узле по индексу расположен искомый ключ
      */
-    std::pair<int16_t, Node*> search(const int64_t&);
+    std::pair<int32_t, Node*> search(const int64_t&);
     // Печать узла
     void print();
     // Вставка маркера удаление
-    void delete_key(const int64_t&);
+    std::pair<uint32_t, Node*> delete_key(const int64_t&);
     // Освобождение динамической памяти в узле и его потомках
     void destroy();
     // Печать узла для отрисовки с помощью graphviz
-    void print_gv();
+    void print_gv(std::ostream&);
+    // Печать узла обходом в глубину
+    void DFS_print(std::ostream&);
 };
 
 // Конструктор узла по значению ключа
@@ -104,6 +113,7 @@ Node::Node(size_t parameter, int64_t value = -1, Node* _parent = nullptr):
      * данный узел не корень, max_keys = 2*t - 1
      */
     max_keys = t - 1;
+    color = White;
 }
 
 // Конструктор узла по ключу
@@ -121,6 +131,7 @@ Node::Node(size_t parameter, Key unit, Node* _parent): t(parameter),
      * данный узел не корень, max_keys = 2*t - 1
      */
     max_keys = t - 1;
+    color = White;
 }
 
 // Деструктор узла
@@ -263,31 +274,42 @@ void Node::destroy() {
 }
 
 // Вставка маркера удаление
-void Node::delete_key(const int64_t& value) {
-    std::pair<uint16_t, Node*> found = this->search(value);
+std::pair<uint32_t, Node*> Node::delete_key(const int64_t& value) {
+    std::pair<int32_t, Node*> found = this->search(value);
     if (found.second != nullptr) {
         found.second->keys[found.first].deleted = true;
-    } else {
-        std::cout << "Couldn't delete value " << value
-            << " because it's missing in the B-tree" << std::endl;
     }
+    return found;
 }
 
 /* Поиск ключа по значению
  * Возвращает пару из индекса и указателя на узел:
- * в данном узле по индексу расположен искомый ключ
+ * в данном узле по индексу расположен искомый неудаленный ключ
  */
-std::pair<int16_t, Node*> Node::search(const int64_t& value) {
+std::pair<int32_t, Node*> Node::search(const int64_t& value) {
     for (const auto& i : this->keys) {
         // Индекс текущего элемента вектора
-        uint16_t index = (uint16_t) (&i - &(*std::begin(this->keys)));
+        uint32_t index = (uint32_t) (&i - &(*std::begin(this->keys)));
 
         int64_t _value = i.value;
         bool is_leaf = this->keys[0].child == nullptr ? true : false;
 
         if (_value == value) {
-            // Нашли совпадение -> передаем индекс и указатель на узел
-            return std::make_pair(index, this);
+            if (i.deleted == false) {
+                /* Нашли совпадение с неудаленным элементом
+                * -> передаем индекс и указатель на узел
+                */
+                return std::make_pair(index, this);
+            } else {
+                /* Элементы, равные данному могут быть только
+                 * следующими в узле или в его дочернем узлах
+                 */
+                if (this->keys[index].child != nullptr) {
+                    return this->keys[index].child->search(value);
+                } else {
+                    continue;
+                }
+            }
         } else if (is_leaf == false) {
             // Спускаемся на уровень ниже
             if (value < _value) {
@@ -336,7 +358,7 @@ void Node::print() {
             std::cout << " " << (&i - &(*std::begin(this->keys)))
                 << "'s child of " << i.value << ": ";
             i.child->print();
-            if ((uint16_t)(&i - &(*std::begin(this->keys)))
+            if ((uint32_t)(&i - &(*std::begin(this->keys)))
                 < (this->keys.size() - 1)) {
                 std::cout << "\t | \t" << std::flush;
             }
@@ -346,32 +368,44 @@ void Node::print() {
 }
 
 // Печать узла для отрисовки с помощью graphviz
-void Node::print_gv() {
-    std::cout << "\"" << this << "\" [label = \"";
+void Node::print_gv(std::ostream& out) {
+    out << "\"" << this << "\" [label = \"";
     for (const auto& i : this->keys) {
         if (i.value != -1) {
-            std::cout << i.value << " ";
+            if (i.deleted == true) {
+                out << "!";
+            }
+            out << i.value << " ";
         }
         if (((&i - &(*std::begin(this->keys)))
             < (int64_t)(this->keys.size() - 1)) &&
             (&i - &(*std::begin(this->keys))) > 0) {
-            std::cout << "| ";
+            out << "| ";
         }
     }
-    std::cout << "\"];" << std::endl;
+    out << "\"];" << std::endl;
     if (this->keys[0].child != nullptr) {
         for (const auto& i : this->keys) {
-            std::cout << "\"" << this << "\" -> \"" << i.child << "\";"
+            out << "\"" << this << "\" -> \"" << i.child << "\";"
                 << std::endl;
-        }
-    }
-    if (this->keys[0].child != nullptr) {
-        for (const auto& i : this->keys) {
-            i.child->print_gv();
+            i.child->print_gv(out);
         }
     }
 }
 
+// Печать узла обходом в глубину
+void Node::DFS_print(std::ostream& out) {
+    for (const auto& i : this->keys) {
+        if ((i.deleted == false) && (i.value != -1)) {
+                out << i.value << ' ';
+            }
+        if ((i.child != nullptr) && (i.child->color != Black)) {
+            i.child->DFS_print(out);
+        }
+    }
+    this->color = Black;
+    return;
+}
 //--------------------------------------
 
 struct Btree {
@@ -390,15 +424,17 @@ struct Btree {
      */
     void add(int64_t);
     // Поиск и печать узла, в котором расположен ключ и его индекса
-    void find(const int64_t&);
+    std::pair<int32_t, Node*> find(const int64_t&);
     // Рекурсивная печать дерева, начиная с корня
     void print();
     // Рекурсивная печать дерева для отрисовки с помощью graphviz
-    void print_gv();
+    void print_gv(std::ostream&);
     // Удаление ключа путем рекурсивного спуска
-    void delete_key(const int64_t&);
+    std::pair<uint32_t, Node*> delete_key(const int64_t&);
     // Определение оператора указателя
     Btree* operator*();
+    // Печать дерева обходом в глубину
+    void DFS_print(std::ostream&);
 };
 
 // Конструктор дерева по параметру дерева и первому значению ключа
@@ -432,22 +468,14 @@ void Btree::add(int64_t value) {
 }
 
 // Поиск и печать узла, в котором расположен ключ и его индекса
-void Btree::find(const int64_t& value) {
-    std::pair<int16_t, Node*> found = root->search(value);
-    if (found.first == -1) {
-        std::cout << "Couldn't find value " << value << std::endl;
-    } else {
-        std::cout << "Found in the node:";
-        for (auto i : found.second->keys) {
-            std::cout << i.value << " ";
-        }
-        std::cout << ", by index " << found.first << std::endl;
-    }
+std::pair<int32_t, Node*> Btree::find(const int64_t& value) {
+    std::pair<int32_t, Node*> found = root->search(value);
+    return found;
 }
 
 // Удаление ключа путем рекурсивного спуска
-void Btree::delete_key(const int64_t& value) {
-    root->delete_key(value);
+std::pair<uint32_t, Node*> Btree::delete_key(const int64_t& value) {
+    return root->delete_key(value);
 }
 
 // Рекурсивная печать дерева, начиная с корня
@@ -458,10 +486,16 @@ void Btree::print() {
 }
 
 // Рекурсивная печать дерева для отрисовки с помощью graphviz
-void Btree::print_gv() {
-    std::cout << "digraph Tree {" << std::endl;
-    root->print_gv();
-    std::cout << "}"<< std::endl;
+void Btree::print_gv(std::ostream& out) {
+    out << "digraph Tree {" << std::endl;
+    root->print_gv(out);
+    out << "}"<< std::endl;
+}
+
+// Печать дерева обходом в глубину
+void Btree::DFS_print(std::ostream& out = std::cout) {
+    root->DFS_print(out);
+    out << std::endl;
 }
 
 #endif  // B_TREE_INCLUDE_B_TREE_HPP_
