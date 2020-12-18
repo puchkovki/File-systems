@@ -1,14 +1,17 @@
 -------------------------------- MODULE crossing --------------------------------
-EXTENDS TLC
+EXTENDS TLC, Sequences, Integers
 
 (* --algorithm cross
-variable states = {}, k = 0, s;
+variable states = {}, k = 0, s, tower = <<<<1, 2, 3>>, <<>>, <<>>>>, 
+define 
+  D == DOMAIN tower
+end define;
 begin
 A:
   if s = 0 then
     print states;
     print ("END");
-  elsif s % 2 then
+  elsif s % 2 = 0 then
       with i \in {9,5,3,1} do
         if (s+i \notin {1,5,6,9,10,14}) /\ (s+i <= 15) /\ (s+i \notin states) then
             k := s+i;
@@ -26,16 +29,21 @@ A:
       end with;
   end if;
 end algorithm; *)
-\* BEGIN TRANSLATION - the hash of the PCal code: PCal-e4d2ffb52c0308dc7092f994430941c7
+\* BEGIN TRANSLATION - the hash of the PCal code: PCal-283f9b371bcd7f8d3375802dd715e78e
 CONSTANT defaultInitValue
-VARIABLES states, k, s, pc
+VARIABLES states, k, s, tower, pc
 
-vars == << states, k, s, pc >>
+(* define statement *)
+D == DOMAIN tower
+
+
+vars == << states, k, s, tower, pc >>
 
 Init == (* Global variables *)
         /\ states = {}
         /\ k = 0
         /\ s = defaultInitValue
+        /\ tower = <<<<1, 2, 3>>, <<>>, <<>>>>
         /\ pc = "A"
 
 A == /\ pc = "A"
@@ -44,7 +52,7 @@ A == /\ pc = "A"
                 /\ PrintT(("END"))
                 /\ pc' = "Done"
                 /\ UNCHANGED << states, k >>
-           ELSE /\ IF s % 2
+           ELSE /\ IF s % 2 = 0
                       THEN /\ \E i \in {9,5,3,1}:
                                 IF (s+i \notin {1,5,6,9,10,14}) /\ (s+i <= 15) /\ (s+i \notin states)
                                    THEN /\ k' = s+i
@@ -59,7 +67,7 @@ A == /\ pc = "A"
                                         /\ pc' = "A"
                                    ELSE /\ pc' = "Done"
                                         /\ UNCHANGED << states, k >>
-     /\ s' = s
+     /\ UNCHANGED << s, tower >>
 
 (* Allow infinite stuttering to prevent deadlock on termination. *)
 Terminating == pc = "Done" /\ UNCHANGED vars
@@ -71,5 +79,5 @@ Spec == Init /\ [][Next]_vars
 
 Termination == <>(pc = "Done")
 
-\* END TRANSLATION - the hash of the generated TLA code (remove to silence divergence warnings): TLA-8f9c3315a6d675ab83ae040bf76e677e
+\* END TRANSLATION - the hash of the generated TLA code (remove to silence divergence warnings): TLA-52aba6d6e827d929ee37b907352af822
 =============================================================================
