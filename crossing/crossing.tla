@@ -1,82 +1,58 @@
 -------------------------------- MODULE crossing --------------------------------
-EXTENDS TLC, Sequences, Integers
+EXTENDS TLC, Integers, FiniteSets
 
 (* --algorithm cross
-variable states = <<>>, k = 0, s = 0, 
+\* Берега: изначально на одной все объекты, а на другой пусто
+variables coast = <<{"W", "G", "C", "H"}, {} >>
+
 define 
-  D == DOMAIN states
+  C == DOMAIN coast
 end define;
+
 begin
-A:
-  s := Tail(states);
-  if s = 0 then
-    print states;
-    print ("END");
-  elsif s % 2 = 0 then
-      with i \in {9,5,3,1} do
-        if (s+i \notin {1,5,6,9,10,14}) /\ (s+i <= 15) /\ (s+i \notin states) then
-            k := s+i;
-            states := Append(states, k);
-            goto A;
+while TRUE do
+    \* Решение найдено, когда на второй берег реки перебрались все объекты
+    assert coast[2] /= {"W", "G", "C", "H"};
+    \* Берег на который перевозим объект тот, на котором сейчас нет перевозчика "Н"
+    with side \in {x \in C: "H" \in coast[x]},
+         \* С того же берега и берем объект для перевозки
+         cargo \in coast[side] do
+        \* Условия на перевозку: на берегу может остаться либо только волк с капустой ("W" & "C"),
+        if coast[side] \ {cargo, "H"} = {"W", "C"} \/
+          \* либо 1 любой объект
+          Cardinality(coast[side] \ {cargo, "H"}) < 2 then
+            \* Выбранный объект переходит с перевозчиком на другую сторону реки
+            coast[side] := coast[side] \ {cargo, "H"} ||
+            coast[CHOOSE to \in C \ {side} : TRUE] := UNION {coast[CHOOSE to \in C \ {side} : TRUE], {cargo, "H"}};
         end if;
-      end with;
-  else
-      with i \in {9,5,3,1} do
-        if (s-i \notin {1,5,6,9,10,14}) /\ (s+i >= 0) /\ (s-i \notin states) then
-            k := s-i;
-            states := Append(states, k);
-            goto A;
-        end if;
-      end with;
-  end if;
+     end with;
+end while;
 end algorithm; *)
-\* BEGIN TRANSLATION - the hash of the PCal code: PCal-a552e52972571a12f9b9fba3afbcff80
-VARIABLES states, k, s, pc
+\* BEGIN TRANSLATION - the hash of the PCal code: PCal-baaabdd366cdc6f36dd0a032d5522190 (chksum(pcal) = "66221363" /\ chksum(tla) = "19de89c4") (chksum(pcal) = "66221363" /\ chksum(tla) = "19de89c4") (chksum(pcal) = "f3f91e83" /\ chksum(tla) = "e1530ad2") (chksum(pcal) = "195af298" /\ chksum(tla) = "8fe711ca") (chksum(pcal) = "fcd8264a" /\ chksum(tla) = "864425a0") (chksum(pcal) = "dfe6194f" /\ chksum(tla) = "3ff86bf3") (chksum(pcal) = "195af298" /\ chksum(tla) = "8fe711ca")
+VARIABLE coast
 
 (* define statement *)
-D == DOMAIN states
+C == DOMAIN coast
 
 
-vars == << states, k, s, pc >>
+vars == << coast >>
 
 Init == (* Global variables *)
-        /\ states = <<>>
-        /\ k = 0
-        /\ s = 0
-        /\ pc = "A"
+        /\ coast = <<{"W", "G", "C", "H"}, {} >>
 
-A == /\ pc = "A"
-     /\ s' = Tail(states)
-     /\ IF s' = 0
-           THEN /\ PrintT(states)
-                /\ PrintT(("END"))
-                /\ pc' = "Done"
-                /\ UNCHANGED << states, k >>
-           ELSE /\ IF s' % 2 = 0
-                      THEN /\ \E i \in {9,5,3,1}:
-                                IF (s'+i \notin {1,5,6,9,10,14}) /\ (s'+i <= 15) /\ (s'+i \notin states)
-                                   THEN /\ k' = s'+i
-                                        /\ states' = Append(states, k')
-                                        /\ pc' = "A"
-                                   ELSE /\ pc' = "Done"
-                                        /\ UNCHANGED << states, k >>
-                      ELSE /\ \E i \in {9,5,3,1}:
-                                IF (s'-i \notin {1,5,6,9,10,14}) /\ (s'+i >= 0) /\ (s'-i \notin states)
-                                   THEN /\ k' = s'-i
-                                        /\ states' = Append(states, k')
-                                        /\ pc' = "A"
-                                   ELSE /\ pc' = "Done"
-                                        /\ UNCHANGED << states, k >>
-
-(* Allow infinite stuttering to prevent deadlock on termination. *)
-Terminating == pc = "Done" /\ UNCHANGED vars
-
-Next == A
-           \/ Terminating
+Next == /\ Assert(coast[2] /= {"W", "G", "C", "H"}, 
+                  "Failure of assertion at line 15, column 5.")
+        /\ \E side \in {x \in C: "H" \in coast[x]}:
+             \E cargo \in coast[side]:
+               IF  coast[side] \ {cargo, "H"} = {"W", "C"} \/
+                  
+                  Cardinality(coast[side] \ {cargo, "H"}) < 2
+                  THEN /\ coast' = [coast EXCEPT ![side] = coast[side] \ {cargo, "H"},
+                                                 ![CHOOSE to \in C \ {side} : TRUE] = UNION {coast[CHOOSE to \in C \ {side} : TRUE], {cargo, "H"}}]
+                  ELSE /\ TRUE
+                       /\ coast' = coast
 
 Spec == Init /\ [][Next]_vars
 
-Termination == <>(pc = "Done")
-
-\* END TRANSLATION - the hash of the generated TLA code (remove to silence divergence warnings): TLA-c37f3c48cef1914730707f0d06eef661
+\* END TRANSLATION - the hash of the generated TLA code (remove to silence divergence warnings): TLA-52e19bd3274c2836a4ddcaf478251e0e
 =============================================================================
