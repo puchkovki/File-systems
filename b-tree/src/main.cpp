@@ -16,14 +16,6 @@ int main(void) {
         }
     }
 
-    std::ofstream out("res/test.txt");
-    if (out.is_open() == 1) {
-        tree.DFS_print(out);
-    } else {
-        std::cout << "Cannot open file res/test.txt for writing!";
-    }
-    out.close();
-
     std::ofstream paint("res/b-tree.gv");
     if (paint.is_open() == 1) {
         tree.print_gv(paint);

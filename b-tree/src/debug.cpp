@@ -22,7 +22,9 @@ void search(Btree *tree, const int& key) {
     } else {
         std::cout << "Found in the node:";
         for (auto i : found.second->keys) {
-            std::cout << i.value << " ";
+            if (i.value != -1) {
+                std::cout << i.value << " ";
+            }
         }
         std::cout << ", by index " << found.first << std::endl;
     }
@@ -39,29 +41,20 @@ void delete_key(Btree* tree, const int& key) {
     std::cout << std::endl;
 }
 
-void test_tree() {
-    size_t t = 3;
-    srand((uint)(time(0)));
-    int key = rand() % 1000;
-    Btree *tree = make_tree(t, key);
-
-    for (int i = 2; i < 20; ++i) {
-        key = rand() % 1000;
-        add(key, tree);
-        tree->print();
-    }
-    delete(tree);
-}
-
 int main(void) {
-    test_tree();
-    /* Подробное тестирование 
+    /* Подробное тестирование  */
     size_t t = 3;
     int key = 1;
     Btree *tree = make_tree(t, key);
 
     for (int i = 2; i < 10; ++i) {
         add(i, tree);
+        tree->print();
+    }
+
+    for (int i = 2; i < 20; ++i) {
+        key = rand() % 1000;
+        add(key, tree);
         tree->print();
     }
 
@@ -77,6 +70,6 @@ int main(void) {
 
     tree->print();
 
-    delete(tree); */
+    delete(tree);
     return EXIT_SUCCESS;
 }

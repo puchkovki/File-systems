@@ -2,6 +2,7 @@
 #include <ctime>
 #include <set>
 #include <fstream>
+#include <queue>
 #include <b-tree.hpp>
 
 enum Command {
@@ -20,12 +21,23 @@ Command chooseCommand(int64_t newCommand) {
     return Find;
 }
 
+void find_key(int64_t* key, std::queue <int64_t>* to_find) {
+    if ((*key % 100) > 50) {
+        if (to_find->size() > 100) {
+            to_find->pop();
+        }
+        to_find->push(*key);
+        *key = to_find->front();
+    }
+}
+
 int main(void) {
     size_t t = 3;
     srand((uint)time(0));
     int64_t key = rand();
     Btree tree(t, key);
     std::multiset<int64_t> set_tree = {key};
+    std::queue <int64_t> queue_find;
 
     for (int64_t i = 0; i < 5000; ++i) {
         int64_t commandKey = rand();
@@ -38,8 +50,7 @@ int main(void) {
             tree.add(key);
 
             auto multiset_result = set_tree.insert(key);
-            if ((multiset_result == set_tree.end())
-                || (*multiset_result != key)) {
+            if (multiset_result == set_tree.end()) {
                 error_occured = true;
             }
 
@@ -49,6 +60,7 @@ int main(void) {
         }
         case Find: {
             bool results_are_equal = true;
+            find_key(&key, &queue_find);
             std::pair<int32_t, Node*> tree_result = tree.find(key);
 
             auto multiset_result = set_tree.find(key);
