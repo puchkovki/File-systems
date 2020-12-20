@@ -56,6 +56,7 @@ int main(void) {
 
             assert((error_occured == false)
                 && "Adding to the b-tree went wrong!");
+            find_key(&key, &queue_find);
             break;
         }
         case Find: {
