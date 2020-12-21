@@ -32,14 +32,14 @@ void find_key(int64_t* key, std::queue <int64_t>* to_find) {
 }
 
 int main(void) {
-    size_t t = 3;
+    size_t t = 10;
     srand((uint)time(0));
     int64_t key = rand();
     Btree tree(t, key);
     std::multiset<int64_t> set_tree = {key};
     std::queue <int64_t> queue_find;
 
-    for (int64_t i = 0; i < 5000; ++i) {
+    for (int64_t i = 0; i < 10000; ++i) {
         int64_t commandKey = rand();
         Command newCommand = chooseCommand(commandKey);
 
