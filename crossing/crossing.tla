@@ -52,6 +52,7 @@ Next == /\ Assert(coast[2] /= {"W", "G", "C", "H"},
                   ELSE /\ TRUE
                        /\ coast' = coast
 
+\* Определение нашей модели: выполняется условие Init (на начальное состояние системы) и на каждом шаге выполняется условие Next.
 Spec == Init /\ [][Next]_vars
 
 \* END TRANSLATION - the hash of the generated TLA code (remove to silence divergence warnings): TLA-52e19bd3274c2836a4ddcaf478251e0e
