@@ -8,7 +8,7 @@
 
 int update_argv() {
     size_t _size = 10;
-    char *ptr = (char*) calloc(1 + _size, sizeof(char));
+    char* ptr = static_cast<char*>(calloc(1 + _size, sizeof(char)));
 
     if (prctl(PR_SET_MM, PR_SET_MM_ARG_START, ptr, 0, 0) < 0) {
         fprintf(stderr, "PR_SET_MM_ARG_START failed: %s\n", strerror(errno));

@@ -3,7 +3,7 @@ FLAGS = -I include -Wall -Wextra -pedantic -O3 -Wshadow -Wformat=2 \
 -D_GLIBCXX_DEBUG_PEDANTIC -fsanitize=address,undefined \
 -fno-sanitize-recover=all -fstack-protector
 
-all: test
+all: debug draw test
 
 .PHONY: clean
 clean:

@@ -3,17 +3,17 @@
 #include <b-tree.hpp>
 
 int main(void) {
-    size_t t = 3;
+    size_t t = 10;
     srand((uint)time(0));
     int key = rand() % 1000;
     Btree tree(t, key);
 
-    for (int i = 2; i < 25; ++i) {
+    for (int i = 2; i < 30; ++i) {
         key = rand() % 1000;
         tree.add(key);
-        if (i % 10 == 0) {
+        /* if (i % 10 == 0) {
             tree.delete_key(key);
-        }
+        }*/
     }
 
     std::ofstream paint("res/b-tree.gv");

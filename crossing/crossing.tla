@@ -20,7 +20,7 @@ while TRUE do
         \* Условия на перевозку: на берегу может остаться либо только волк с капустой ("W" & "C"),
         if coast[side] \ {cargo, "H"} = {"W", "C"} \/
           \* либо 1 любой объект
-          Cardinality(coast[side] \ {cargo, "H"}) < 2 then
+           Cardinality(coast[side] \ {cargo, "H"}) < 2 then
             \* Выбранный объект переходит с перевозчиком на другую сторону реки
             coast[side] := coast[side] \ {cargo, "H"} ||
             coast[CHOOSE to \in C \ {side} : TRUE] := UNION {coast[CHOOSE to \in C \ {side} : TRUE], {cargo, "H"}};

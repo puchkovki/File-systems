@@ -112,7 +112,11 @@ Node::Node(size_t parameter, int64_t value = -1, Node* _parent = nullptr):
     /* В классической реализации в случае, если
      * данный узел не корень, max_keys = 2*t - 1
      */
-    max_keys = t - 1;
+    if (this->parent == nullptr) {
+        max_keys = t - 1;
+    } else {
+        max_keys = 2*t - 1;
+    }
     color = White;
 }
 
@@ -130,7 +134,11 @@ Node::Node(size_t parameter, Key unit, Node* _parent): t(parameter),
     /* В классической реализации в случае, если
      * данный узел не корень, max_keys = 2*t - 1
      */
-    max_keys = t - 1;
+    if (this->parent == nullptr) {
+        max_keys = t - 1;
+    } else {
+        max_keys = 2*t - 1;
+    }
     color = White;
 }
 
